@@ -21,6 +21,9 @@ References:
    - https://developer.mozilla.org/en-US/docs/JSON#JSON_in_Firefox_2
 */
 
+var sys = require('util'),
+    rest = require('restler');
+
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
@@ -35,6 +38,18 @@ var assertFileExists = function(infile) {
     }
     return instr;
 };
+
+var assertURLExists = function(url){
+    var instr = rest.get(url).on('complete', function(result){
+	if (result instanceof Error){
+	    console.log("%s does not exist.  Exiting", result);
+	    process.exit(1);
+	} else {
+	    return result;
+	}
+    });
+    return instr;		 
+}
 
 var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
@@ -65,6 +80,7 @@ if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+        .option('-u, --url <address>', 'Address of url to check', clone(assertURLExists), HTMLFILE_DEFAULT)
         .parse(process.argv);
     var checkJson = checkHtmlFile(program.file, program.checks);
     var outJson = JSON.stringify(checkJson, null, 4);
